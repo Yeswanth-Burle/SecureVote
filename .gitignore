@@ -13,6 +13,12 @@ secrets.json
 *.log
 dispatched_emails.log
 
+# Academic Reports & PDFs (Local only)
+PROJECT_REPORT.html
+PROJECT_REPORT.md
+report_images/
+*.pdf
+
 # Python Bytecode & Cache
 __pycache__/
 *.py[cod]
