@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SecureVote - Official Online Voting System powered by PyMongo & MongoDB. Role-based voter registration, admin OTP verification, and strict electoral lifecycle controls.">
+    <title>SecureVote | Official Online Voting Portal</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js for Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css?v=5.0">
+</head>
+<body class="dark-theme">
+    <!-- Ambient Animated Mesh Glow Background -->
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+    <div class="ambient-glow glow-3"></div>
+
+    <!-- ====================================================================== -->
+    <!-- 1. TOP OFFICIAL SYSTEM STATUS BAR                                      -->
+    <!-- ====================================================================== -->
+    <div class="official-trust-bar">
+        <div class="trust-bar-container">
+            <div class="trust-left">
+                <span class="emblem-seal">🏛️</span>
+                <span class="trust-title">CENTRAL ELECTORAL COMMISSION • SECURE ELECTRONIC BALLOTING PORTAL</span>
+            </div>
+            <div class="trust-center">
+                <span class="trust-badge"><span class="badge-icon">🔒</span> SHA-256 Ballot Sealing</span>
+                <span class="trust-badge"><span class="badge-icon">🛡️</span> Double-Vote Unique Index</span>
+                <span class="trust-badge"><span class="badge-icon">⚡</span> MongoDB 8.2 &amp; PyMongo</span>
+            </div>
+            <div class="trust-right">
+                <span class="live-clock-badge">
+                    <span class="clock-dot pulse"></span>
+                    <span id="liveSystemClock">Synchronizing System Time...</span>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- 2. MAIN APPLICATION HEADER (Hidden in Pure Auth Gateway, Shown When Logged In) -->
+    <!-- ====================================================================== -->
+    <header class="app-header hidden" id="mainAppHeader">
+        <div class="header-container">
+            <div class="brand-group">
+                <div class="brand-icon">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="M9 12l2 2 4-4"/>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <div class="brand-title">Secure<span class="gradient-text">Vote</span> <span class="version-tag" id="portalRoleTag">PORTAL</span></div>
+                    <div class="brand-subtitle" id="portalSubTitle">University Electoral Management System • CSE494</div>
+                </div>
+            </div>
+
+            <!-- Active User Info Pill & Logout -->
+            <div class="header-user-section">
+                <div class="user-role-badge">
+                    <div class="role-avatar" id="headerUserAvatar">👤</div>
+                    <div class="role-info">
+                        <div class="role-name" id="headerUserName">Loading...</div>
+                        <div class="role-desc" id="headerUserDesc">Verifying...</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="triggerLogout()">
+                    <span>🚪 Sign Out</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Role-Specific Navigation Bar -->
+        <nav class="navigation-tabs" id="navigationTabs">
+            <!-- Voter Navigation Tabs -->
+            <div class="nav-tab-group hidden" id="voterNavGroup">
+                <button class="nav-tab active" data-tab="voter-booth" onclick="switchVoterTab('voter-booth')">
+                    <span class="tab-icon">🗳️</span>
+                    <span>1. Official Polling Booth</span>
+                </button>
+                <button class="nav-tab" data-tab="voter-receipts" onclick="switchVoterTab('voter-receipts')">
+                    <span class="tab-icon">📜</span>
+                    <span>2. My Ballot Receipts</span>
+                </button>
+                <button class="nav-tab" data-tab="voter-results" onclick="switchVoterTab('voter-results')">
+                    <span class="tab-icon">📊</span>
+                    <span>3. Certified Election Results</span>
+                </button>
+            </div>
+
+            <!-- Admin Navigation Tabs -->
+            <div class="nav-tab-group hidden" id="adminNavGroup">
+                <button class="nav-tab active" data-tab="admin-queue" onclick="switchAdminTab('queue')">
+                    <span class="tab-icon">👥</span>
+                    <span>1. Voter Verification Queue</span>
+                    <span class="nav-counter-badge hidden" id="pendingVotersCountBadge">0</span>
+                </button>
+                <button class="nav-tab" data-tab="admin-elections" onclick="switchAdminTab('elections')">
+                    <span class="tab-icon">🗳️</span>
+                    <span>2. Elections Management</span>
+                </button>
+                <button class="nav-tab" data-tab="admin-candidates" onclick="switchAdminTab('candidates')">
+                    <span class="tab-icon">🎭</span>
+                    <span>3. Contestants Roster</span>
+                </button>
+                <button class="nav-tab" data-tab="admin-results" onclick="switchAdminTab('results')">
+                    <span class="tab-icon">📊</span>
+                    <span>4. Live Tallies &amp; Analytics</span>
+                </button>
+                <button class="nav-tab" data-tab="admin-audit" onclick="switchAdminTab('audit')">
+                    <span class="tab-icon">📜</span>
+                    <span>5. Security Audit Trail</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- ====================================================================== -->
+    <!-- 3. MAIN WORKSPACE / VIEWS                                              -->
+    <!-- ====================================================================== -->
+    <main class="app-main">
+
+        <!-- ================================================================== -->
+        <!-- VIEW 1: INITIAL AUTHENTICATION GATEWAY (Shown When NOT Logged In)   -->
+        <!-- ================================================================== -->
+        <section class="auth-gateway-section active" id="view-auth-gateway">
+            <div class="auth-gateway-container">
+                <!-- Portal Branding -->
+                <div class="auth-portal-header">
+                    <div class="auth-portal-crest">🏛️</div>
+                    <h1 class="auth-portal-title">Official Electronic Voting Portal</h1>
+                    <p class="auth-portal-subtitle">
+                        Central University Electoral Commission • CSE494 Intelligent NoSQL Databases
+                    </p>
+                </div>
+
+                <!-- Role Selection Toggle Cards -->
+                <div class="auth-role-tabs">
+                    <button class="auth-role-btn active" id="btnRoleTabVoter" onclick="selectAuthRole('voter')">
+                        <span class="role-btn-icon">🗳️</span>
+                        <div class="role-btn-text">
+                            <strong>Voter Portal</strong>
+                            <span>Students &amp; Voters Access</span>
+                        </div>
+                    </button>
+                    <button class="auth-role-btn" id="btnRoleTabAdmin" onclick="selectAuthRole('admin')">
+                        <span class="role-btn-icon">🔐</span>
+                        <div class="role-btn-text">
+                            <strong>Admin Portal</strong>
+                            <span>Commission Control Gateway</span>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- PANEL A: VOTER AUTHENTICATION (Login / Signup) -->
+                <div class="auth-card glass-card" id="authPanelVoter">
+                    <!-- Voter Sub-Tabs: Sign In vs Sign Up -->
+                    <div class="voter-subtabs">
+                        <button class="voter-subtab-btn active" id="btnVoterSubtabLogin" onclick="toggleVoterMode('login')">
+                            Voter Sign In
+                        </button>
+                        <button class="voter-subtab-btn" id="btnVoterSubtabSignup" onclick="toggleVoterMode('signup')">
+                            Sign Up as New Voter
+                        </button>
+                    </div>
+
+                    <!-- Voter Sign In Form -->
+                    <div id="voterLoginFormContainer">
+                        <p class="auth-card-desc">Enter your registered University Email Address and Password to enter the polling booth.</p>
+                        <form onsubmit="handleVoterLogin(event)">
+                            <div class="form-group">
+                                <label for="voterLoginId">Registered University Email:</label>
+                                <input type="email" id="voterLoginId" required class="text-input" placeholder="e.g. student@univ.edu" autocomplete="email">
+                            </div>
+                            <div class="form-group">
+                                <label for="voterLoginPass">Password:</label>
+                                <input type="password" id="voterLoginPass" required class="text-input" placeholder="Enter your password" autocomplete="current-password">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-large full-width" id="btnSubmitVoterLogin">
+                                <span>🗳️ Enter Polling Booth</span> ➔
+                            </button>
+                        </form>
+
+                        <div class="auth-footer-help">
+                            <span>New voter?</span>
+                            <a href="javascript:void(0)" onclick="toggleVoterMode('signup')">Sign up here for electoral verification</a>
+                        </div>
+                    </div>
+
+                    <!-- Voter Sign Up Form (Creates new voter with status: pending and auto-assigned ID) -->
+                    <div id="voterSignupFormContainer" class="hidden">
+                        <div class="alert-box alert-info" style="margin-bottom: 1.25rem;">
+                            ℹ️ <strong>Electoral Registration:</strong> Your account will be registered and reviewed by the <strong>Admin</strong> for voting eligibility.
+                        </div>
+
+                        <div class="form-auto-badge" style="background: rgba(59, 130, 246, 0.08); border: 1px dashed rgba(59, 130, 246, 0.35); padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem; font-size: 0.88rem; color: #93c5fd;">
+                            <span style="font-size: 1.4rem;">🎫</span>
+                            <div>
+                                <strong>Automated Voter ID Issuance:</strong> Your unique Voter ID (e.g. <code>VTR-1001</code>, <code>VTR-1002</code>...) will be generated automatically by the electoral registry upon registration. No need to guess or enter IDs manually!
+                            </div>
+                        </div>
+
+                        <form onsubmit="handleVoterSignup(event)">
+                            <div class="form-row">
+                                <div class="form-group half">
+                                    <label for="regName">Full Legal Name:</label>
+                                    <input type="text" id="regName" required class="text-input" placeholder="e.g. Alex Morgan" autocomplete="name">
+                                </div>
+                                <div class="form-group half">
+                                    <label for="regEmail">University Email (Used to Log In):</label>
+                                    <input type="email" id="regEmail" required class="text-input" placeholder="e.g. student@univ.edu" autocomplete="email">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="regPassword">Create Account Password:</label>
+                                <input type="password" id="regPassword" required minlength="4" class="text-input" placeholder="Choose a secure password (min. 4 characters)" autocomplete="new-password">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 2;">
+                                    <label for="regDept">Academic Department:</label>
+                                    <select id="regDept" class="select-input" required>
+                                        <option value="Computer Science">Computer Science</option>
+                                        <option value="Electronics">Electronics</option>
+                                        <option value="Mechanical">Mechanical</option>
+                                        <option value="Management">Management</option>
+                                        <option value="Biotechnology">Biotechnology</option>
+                                        <option value="Civil">Civil</option>
+                                    </select>
+                                </div>
+                                <div class="form-group half">
+                                    <label for="regYear">Study Year:</label>
+                                    <input type="number" id="regYear" min="1" max="5" value="2" required class="text-input">
+                                </div>
+                                <div class="form-group half">
+                                    <label for="regAge">Age (&ge;18):</label>
+                                    <input type="number" id="regAge" min="18" max="100" value="20" required class="text-input">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-large full-width" id="btnSubmitVoterSignup" style="margin-top: 0.5rem;">
+                                <span>📝 Submit Registration for Admin Approval</span>
+                            </button>
+                        </form>
+
+                        <div class="auth-footer-help">
+                            <span>Already registered?</span>
+                            <a href="javascript:void(0)" onclick="toggleVoterMode('login')">Back to Sign In</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANEL B: ADMIN AUTHENTICATION (Restricted to yeswanthburle1432@gmail.com with OTP) -->
+                <div class="auth-card glass-card hidden" id="authPanelAdmin">
+                    <div class="admin-auth-badge">
+                        <span class="badge-icon">🔐</span>
+                        <span>Commission Portal: <strong>Admin Access Gateway</strong></span>
+                    </div>
+
+                    <!-- Step 1: Email Input & Request OTP -->
+                    <div id="adminStepEmail">
+                        <p class="auth-card-desc">
+                            Only the authorized election commission email is permitted. A single-use 6-digit OTP will be generated for authentication.
+                        </p>
+                        <form onsubmit="handleRequestAdminOtp(event)">
+                            <div class="form-group">
+                                <label for="adminEmailInput">Administrator Email:</label>
+                                <input type="email" id="adminEmailInput" required class="text-input" value="yeswanthburle1432@gmail.com">
+                            </div>
+                            <button type="submit" class="btn btn-gold btn-large full-width" id="btnRequestOtp">
+                                <span>📩 Request 6-Digit Verification OTP</span> ➔
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Step 2: OTP Verification Input -->
+                    <div id="adminStepOtp" class="hidden">
+                        <div class="alert-box alert-success" id="adminOtpNoticeBox" style="margin-bottom: 1.25rem;">
+                            <!-- Populated with security notice after dispatch -->
+                        </div>
+
+                        <form onsubmit="handleVerifyAdminOtp(event)">
+                            <div class="form-group">
+                                <label for="adminOtpInput" style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span>Enter 6-Digit OTP from Email:</span>
+                                    <span style="font-size: 0.78rem; color: #94a3b8;">Manual entry</span>
+                                </label>
+                                <input type="text" id="adminOtpInput" required maxlength="6" class="text-input otp-input-code" placeholder="• • • • • •" autocomplete="off" spellcheck="false">
+                            </div>
+
+                            <button type="submit" class="btn btn-gold btn-large full-width" id="btnVerifyOtp">
+                                <span>🔐 Verify OTP &amp; Unlock Commission Console</span>
+                            </button>
+                        </form>
+
+                        <div class="auth-footer-help" style="margin-top: 1.25rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
+                            <a href="javascript:void(0)" onclick="resendAdminOtp()" id="btnResendOtp">🔄 Resend Code</a>
+                            <a href="javascript:void(0)" onclick="resetAdminOtpStep()">← Change Email</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================== -->
+        <!-- VIEW 2: AUTHENTICATED VOTER PORTAL                                 -->
+        <!-- ================================================================== -->
+        <section class="portal-workspace hidden" id="view-voter-workspace">
+            <!-- TAB 1: Polling Booth & Ballots -->
+            <div class="voter-tab-pane active" id="voter-tab-booth">
+                <!-- Voter Identity Smart Card Pass -->
+                <div class="voter-id-smart-card" id="voterSmartCard">
+                    <div class="smart-card-chip"></div>
+                    <div class="smart-card-body">
+                        <div class="smart-card-top">
+                            <div class="card-issuer">
+                                <span class="issuer-seal">🏛️</span>
+                                <span>OFFICIAL ELECTORAL CREDENTIAL • UNIVERSITY OF CSE494</span>
+                            </div>
+                            <div class="card-status verified">
+                                <span class="status-indicator">●</span> ELIGIBILITY VERIFIED &amp; APPROVED
+                            </div>
+                        </div>
+
+                        <div class="smart-card-details">
+                            <div class="voter-portrait" id="voterCardInitials">--</div>
+                            <div class="voter-primary-info">
+                                <div class="voter-name" id="voterCardName">--</div>
+                                <div class="voter-id-code">Voter ID: <strong id="voterCardId">--</strong></div>
+                                <div class="voter-dept-year" id="voterCardDept">--</div>
+                            </div>
+                            <div class="voter-security-meta">
+                                <div class="meta-item">
+                                    <span class="meta-label">ADMIN APPROVAL</span>
+                                    <span class="meta-value text-success">APPROVED BY ADMIN</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label">BALLOT SECURITY</span>
+                                    <span class="meta-value">SHA-256 SALT ANONYMIZED</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Election Selector for Voter -->
+                <div class="ballot-scope-banner">
+                    <div class="scope-info">
+                        <span class="badge-pill">Accepted University Election</span>
+                        <h2 class="ballot-election-title" id="voterElectionTitle">Loading Active Election...</h2>
+                        <p class="ballot-election-desc" id="voterElectionDesc">Elections displayed below have been accepted and officially opened by the Administrator.</p>
+                    </div>
+                    <div class="election-select-wrap">
+                        <label class="input-label" for="voterElectionSelect">Active Election:</label>
+                        <select id="voterElectionSelect" class="select-input" onchange="onVoterElectionChange()">
+                            <!-- Populated with active elections -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Already Voted Notice Box -->
+                <div class="glass-card already-voted-card hidden" id="voterAlreadyVotedNotice">
+                    <div class="voted-seal-icon">✓</div>
+                    <div class="voted-notice-content">
+                        <h3>Your Ballot Has Been Recorded &amp; Cryptographically Sealed</h3>
+                        <p>You have cast your vote in this election. Under the one-person-one-vote rule enforced by MongoDB compound unique indexing, your ballot is final.</p>
+                        <div class="receipt-quick-summary" id="voterAlreadyVotedSummary"></div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="viewVoterReceiptModal()">
+                        <span>📜 View Digital Receipt</span>
+                    </button>
+                </div>
+
+                <!-- Election Closed Notice Box -->
+                <div class="glass-card already-voted-card hidden" id="voterElectionClosedNotice" style="border-color: rgba(99, 102, 241, 0.4);">
+                    <div class="voted-seal-icon" style="background: var(--primary); color: #fff;">🔒</div>
+                    <div class="voted-notice-content">
+                        <h3>Election Closed by Administrator</h3>
+                        <p>Voting for this election has been closed by the Admin. Final results and certified tallies are published below.</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="switchVoterTab('voter-results')">
+                        <span>📊 View Final Certified Results</span>
+                    </button>
+                </div>
+
+                <!-- Official Digital Ballot Paper -->
+                <div class="ballot-paper-container" id="ballotPaperContainer">
+                    <div class="ballot-paper-header">
+                        <div class="ballot-official-seal">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 6v6l4 2"/>
+                            </svg>
+                            <span>OFFICIAL CERTIFIED BALLOT PAPER</span>
+                        </div>
+                        <div class="ballot-instruction">
+                            <strong>INSTRUCTION:</strong> Mark exactly one (1) candidate choice below.
+                        </div>
+                    </div>
+
+                    <!-- Candidates Grid -->
+                    <div class="ballot-candidates-grid" id="voterCandidatesGrid">
+                        <div class="loading-state">Loading candidate slate...</div>
+                    </div>
+
+                    <!-- Ballot Action Bar -->
+                    <div class="ballot-action-bar" id="ballotActionBar">
+                        <div class="selected-choice-preview">
+                            <span class="choice-label">Your Marked Choice:</span>
+                            <strong class="choice-name" id="voterSelectedChoiceText">None Selected (Mark a candidate card)</strong>
+                        </div>
+                        <button class="btn btn-primary btn-large" id="btnCastBallot" onclick="openVoteConfirmModal()" disabled>
+                            <span>🔒 Review &amp; Cast Official Ballot</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: Certified Election Results (Voter View) -->
+            <div class="voter-tab-pane hidden" id="voter-tab-results">
+                <div class="section-hero">
+                    <div class="hero-content">
+                        <span class="badge-pill">Certified Electoral Standing</span>
+                        <h1 class="hero-title">Certified Election Results</h1>
+                        <p class="hero-desc">Official outcomes announced exclusively once voting is closed by the Administrator.</p>
+                    </div>
+                    <div class="hero-actions" style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                        <label for="voterResultsElectionSelect" style="font-size: 0.88rem; color: var(--text-muted); margin: 0;">Select Election:</label>
+                        <select id="voterResultsElectionSelect" class="select-input" onchange="onVoterResultsElectionChange()" style="min-width: 250px;">
+                            <!-- Populated dynamically with elections -->
+                        </select>
+                        <button class="btn btn-secondary btn-sm" onclick="loadVoterResults()">
+                            <span>🔄 Refresh</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STATE A: ELECTION NOT CLOSED YET (Voting in progress or draft) -->
+                <div class="glass-card" id="voterResultsPendingNotice" style="text-align: center; padding: 3.5rem 2rem; border-radius: 16px; border: 1px dashed rgba(99, 102, 241, 0.4); margin-top: 1.5rem;">
+                    <div style="font-size: 3.5rem; margin-bottom: 1rem;">⏳</div>
+                    <h2 style="font-size: 1.6rem; color: #f8fafc; font-weight: 700; margin-bottom: 0.75rem;">
+                        No Results Announced Yet
+                    </h2>
+                    <p style="color: #94a3b8; max-width: 600px; margin: 0 auto 1.5rem auto; line-height: 1.6; font-size: 1rem;">
+                        Voting is currently active and underway for <strong id="voterResultsPendingTitle" style="color: #93c5fd;">this election</strong>. Under university electoral commission protocol, live tallies remain sealed and will only be announced here once the election is officially closed by the <strong>Admin</strong>.
+                    </p>
+                    <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(59, 130, 246, 0.15); color: #93c5fd; padding: 0.6rem 1.4rem; border-radius: 9999px; font-weight: 600; font-size: 0.9rem; border: 1px solid rgba(59, 130, 246, 0.3);">
+                        <span>🔒 In Progress: Results will be announced once closed by Admin</span>
+                    </div>
+                </div>
+
+                <!-- STATE B: ELECTION OFFICIALLY CLOSED (Certified Winner & Tallies) -->
+                <div id="voterResultsDataContainer" class="hidden">
+                    <div class="alert-box alert-success" style="margin-top: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                        <span style="font-size: 1.5rem;">🏆</span>
+                        <div>
+                            <strong>Official Certified Outcome:</strong> This election has been officially closed and certified by the <strong>Admin</strong>. Final verified tallies and winners are shown below.
+                        </div>
+                    </div>
+
+                    <!-- KPI Metric Cards -->
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-label">Registered Electorate</div>
+                            <div class="kpi-value" id="resTotalVoters">--</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Total Ballots Cast</div>
+                            <div class="kpi-value text-accent" id="resTotalBallots">--</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Final Voter Turnout</div>
+                            <div class="kpi-value text-success" id="resTurnoutRate">--%</div>
+                        </div>
+                        <div class="kpi-card highlight-card">
+                            <div class="kpi-label">Certified Winner</div>
+                            <div class="kpi-value text-gold" id="resLeaderName">--</div>
+                            <div class="kpi-subtext" id="resLeaderStats">--</div>
+                        </div>
+                    </div>
+
+                    <!-- Results Table -->
+                    <div class="glass-card table-card" style="margin-top: 1.5rem;">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Candidate Name</th>
+                                        <th>Party / Slate</th>
+                                        <th>Department</th>
+                                        <th>Verified Votes</th>
+                                        <th>Vote Share (%)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="voterResultsTableBody">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: Voter Personal Receipts History -->
+            <div class="voter-tab-pane hidden" id="voter-tab-receipts">
+                <div class="section-hero">
+                    <div class="hero-content">
+                        <span class="badge-pill">Cryptographic Proof of Participation</span>
+                        <h1 class="hero-title">My Digital Voting Receipts</h1>
+                        <p class="hero-desc">Every vote you cast generates a digital cryptographic receipt token proving your vote was accepted without revealing your candidate choice.</p>
+                    </div>
+                    <button class="btn btn-secondary" onclick="loadVoterReceiptsHistory()">
+                        <span>🔄 Refresh</span>
+                    </button>
+                </div>
+
+                <div class="receipts-history-grid" id="voterReceiptsContainer">
+                    <div class="loading-state">Loading your receipts...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================== -->
+        <!-- VIEW 3: AUTHENTICATED ADMIN PORTAL                                 -->
+        <!-- ================================================================== -->
+        <section class="portal-workspace hidden" id="view-admin-workspace">
+            <!-- Admin Top Welcome Banner -->
+            <div class="admin-top-banner">
+                <div class="admin-banner-left">
+                    <div class="admin-shield">🛡️</div>
+                    <div>
+                        <div class="admin-banner-title">Election Commission Control Center</div>
+                        <div class="admin-banner-subtitle">
+                            <strong>Commission Admin</strong> • Full Electoral Governance
+                        </div>
+                    </div>
+                </div>
+                <div class="admin-banner-actions">
+                    <button class="btn btn-danger btn-sm" onclick="purgeAllVotersAndVotes()" title="Clears existing voters so voters sign up fresh">
+                        <span>🗑️ Reset All Voters &amp; Votes</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB A: Voter Verification & Eligibility Queue -->
+            <div class="admin-tab-pane active" id="admin-tab-queue">
+                <div class="admin-action-bar">
+                    <div class="action-bar-left">
+                        <h3>Pending Voter Verification Requests</h3>
+                        <p class="card-subtext">Review new student sign-ups. Only approved voters are granted login and voting eligibility.</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="loadPendingVotersQueue()">
+                        <span>🔄 Refresh Queue</span>
+                    </button>
+                </div>
+
+                <!-- Pending Voters Table -->
+                <div class="glass-card table-card" style="margin-bottom: 2.5rem;">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Student / Voter ID</th>
+                                    <th>Full Name</th>
+                                    <th>University Email</th>
+                                    <th>Department</th>
+                                    <th>Year</th>
+                                    <th>Age</th>
+                                    <th>Status</th>
+                                    <th>Administrator Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingVotersTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Approved Electorate Table -->
+                <div class="admin-action-bar">
+                    <div class="action-bar-left">
+                        <h3>Approved &amp; Eligible Electorate (Active Voters)</h3>
+                        <p class="card-subtext">Students with verified voting credentials.</p>
+                    </div>
+                </div>
+
+                <div class="glass-card table-card">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Voter ID</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Department</th>
+                                    <th>Year</th>
+                                    <th>Age</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activeVotersTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB B: Elections Management (Accept & Close Lifecycle) -->
+            <div class="admin-tab-pane hidden" id="admin-tab-elections">
+                <div class="admin-action-bar">
+                    <div class="action-bar-left">
+                        <h3>University Elections Management</h3>
+                        <p class="card-subtext">Add new elections, accept/open them for voters, or close completed elections to publish certified outcomes.</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="toggleInlineCreateElection()">
+                        <span>➕ Add New Election</span>
+                    </button>
+                </div>
+
+                <!-- Inline Quick Create Election Form -->
+                <div class="glass-card hidden" id="adminInlineElectionCard" style="padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid rgba(99, 102, 241, 0.35);">
+                    <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 1rem; color: #93c5fd; display: flex; align-items: center; justify-content: space-between;">
+                        <span>🗳️ Register New University Election Contest</span>
+                        <button class="btn btn-secondary btn-sm" onclick="toggleInlineCreateElection()">Cancel</button>
+                    </div>
+                    <form onsubmit="handleInlineCreateElection(event)">
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label for="inlineElecId">Election ID (Unique):</label>
+                                <input type="text" id="inlineElecId" required class="text-input" placeholder="e.g. ELEC-2026-CHAIR">
+                            </div>
+                            <div class="form-group half">
+                                <label for="inlineElecTitle">Election Title:</label>
+                                <input type="text" id="inlineElecTitle" required class="text-input" placeholder="e.g. Campus Cultural Secretary Election 2026">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label for="inlineElecCat">Category:</label>
+                                <select id="inlineElecCat" class="select-input" required>
+                                    <option value="Student Council">Student Council</option>
+                                    <option value="Departmental">Departmental</option>
+                                    <option value="Sports Board">Sports Board</option>
+                                    <option value="Club & Society">Club & Society</option>
+                                </select>
+                            </div>
+                            <div class="form-group half">
+                                <label for="inlineElecStatus">Initial Status:</label>
+                                <select id="inlineElecStatus" class="select-input">
+                                    <option value="draft">Draft (Hidden from voters until accepted)</option>
+                                    <option value="active">Active (Open to voters immediately)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="inlineElecDesc">Election Scope &amp; Description:</label>
+                            <input type="text" id="inlineElecDesc" class="text-input" placeholder="Mandate, eligibility scope, and voting duration...">
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="btnSubmitInlineElec">
+                            <span>✅ Create &amp; Save Election</span>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="glass-card table-card">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Election ID</th>
+                                    <th>Title</th>
+                                    <th>Category</th>
+                                    <th>Status</th>
+                                    <th>Voter Visibility</th>
+                                    <th>Actions (Accept / Close)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminElectionsTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB C: Candidates & Contestants Management -->
+            <div class="admin-tab-pane hidden" id="admin-tab-candidates">
+                <div class="admin-action-bar">
+                    <div class="action-bar-left">
+                        <h3>Contestants &amp; Candidates Roster</h3>
+                        <p class="card-subtext">Add new candidates and manage contestant manifestos for each election.</p>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                        <label for="adminCandidateElectionFilter" style="font-size: 0.88rem; color: var(--text-muted); margin: 0;">Filter Contest:</label>
+                        <select id="adminCandidateElectionFilter" class="select-input" onchange="loadAdminCandidatesTable()" style="min-width: 200px;">
+                            <!-- Populated with elections -->
+                        </select>
+                        <button class="btn btn-primary" onclick="toggleInlineAddCandidate()">
+                            <span>➕ Add Contestant</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Inline Quick Add Candidate Form -->
+                <div class="glass-card hidden" id="adminInlineCandidateCard" style="padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid rgba(99, 102, 241, 0.35);">
+                    <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 1rem; color: #93c5fd; display: flex; align-items: center; justify-content: space-between;">
+                        <span>🎭 Register Contestant to Election Slate</span>
+                        <button class="btn btn-secondary btn-sm" onclick="toggleInlineAddCandidate()">Cancel</button>
+                    </div>
+                    <form onsubmit="handleInlineAddCandidate(event)">
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label for="inlineCandElectionId">Select Target Election:</label>
+                                <select id="inlineCandElectionId" class="select-input" required>
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="form-group half">
+                                <label for="inlineCandName">Contestant Full Legal Name:</label>
+                                <input type="text" id="inlineCandName" required class="text-input" placeholder="e.g. Vikram Malhotra">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label for="inlineCandParty">Party / Slate Affiliation:</label>
+                                <input type="text" id="inlineCandParty" required class="text-input" placeholder="e.g. Campus Progress Alliance">
+                            </div>
+                            <div class="form-group half">
+                                <label for="inlineCandDept">Academic Department:</label>
+                                <select id="inlineCandDept" class="select-input" required>
+                                    <option value="Computer Science">Computer Science</option>
+                                    <option value="Electronics">Electronics</option>
+                                    <option value="Mechanical">Mechanical</option>
+                                    <option value="Management">Management</option>
+                                    <option value="Biotechnology">Biotechnology</option>
+                                    <option value="Civil">Civil</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="inlineCandManifesto">Campaign Manifesto &amp; Policy Vision:</label>
+                            <textarea id="inlineCandManifesto" required minlength="8" class="text-input" rows="2" placeholder="Student welfare commitments, academic initiatives, campus life improvements..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="btnSubmitInlineCand">
+                            <span>✅ Register Contestant</span>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="glass-card table-card">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Candidate ID</th>
+                                    <th>Name</th>
+                                    <th>Party / Slate</th>
+                                    <th>Department</th>
+                                    <th>Manifesto</th>
+                                    <th>Votes Tallied</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminCandidatesTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB D: Admin Live Results & Tallies -->
+            <div class="admin-tab-pane hidden" id="admin-tab-results">
+                <div class="admin-action-bar">
+                    <div class="action-bar-left">
+                        <h3>Certified Tallies &amp; Results Dashboard</h3>
+                        <p class="card-subtext">Direct aggregation from raw ballots recorded in MongoDB.</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="loadAdminAnalytics()">
+                        <span>🔄 Refresh</span>
+                    </button>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="glass-card chart-card">
+                        <div class="card-header">
+                            <h3>Candidate Vote Tally</h3>
+                            <span class="badge-tag">Pipeline 1: $lookup</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="adminCandidateVotesChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="glass-card chart-card">
+                        <div class="card-header">
+                            <h3>Department Turnout</h3>
+                            <span class="badge-tag">Pipeline 2: $group</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="adminDepartmentTurnoutChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card table-card" style="margin-top: 1.5rem;">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Candidate ID</th>
+                                    <th>Candidate Name</th>
+                                    <th>Party / Slate</th>
+                                    <th>Department</th>
+                                    <th>Verified Votes</th>
+                                    <th>Share (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminResultsTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB E: Security Audit Trail -->
+            <div class="admin-tab-pane hidden" id="admin-tab-audit">
+                <div class="admin-action-bar">
+                    <div class="action-bar-left">
+                        <h3>MongoDB Immutable Audit Trail</h3>
+                        <p class="card-subtext">Security logs of registrations, approvals, election status updates, and cast votes.</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="loadAdminAuditLogs()">
+                        <span>🔄 Refresh</span>
+                    </button>
+                </div>
+
+                <div class="glass-card table-card">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Action Type</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminAuditTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ====================================================================== -->
+    <!-- 4. MODALS (Ballot Confirm, Receipt, Election Create, Candidate Create)  -->
+    <!-- ====================================================================== -->
+
+    <!-- Vote Confirmation Modal -->
+    <div id="voteConfirmModal" class="modal-backdrop hidden">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3>Confirm Your Official Ballot</h3>
+                <button class="modal-close" onclick="closeModal('voteConfirmModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>You are about to cast your official, secret ballot for:</p>
+                <div class="selected-candidate-preview">
+                    <div class="candidate-preview-avatar" id="confirmCandAvatar">--</div>
+                    <div>
+                        <div class="candidate-preview-name" id="confirmCandName">--</div>
+                        <div class="candidate-preview-party" id="confirmCandParty">--</div>
+                        <div class="candidate-preview-dept" id="confirmCandDept">--</div>
+                    </div>
+                </div>
+                <div class="alert-box alert-warning">
+                    ⚠️ <strong>Irreversible Action:</strong> Your ballot will be detached, hashed with SHA-256, and sealed in MongoDB. Duplicate voting is mathematically prevented.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('voteConfirmModal')">Cancel</button>
+                <button class="btn btn-primary" id="btnConfirmVoteCast" onclick="submitOfficialVote()">
+                    🔒 Confirm &amp; Seal Ballot
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Official Voting Receipt Modal -->
+    <div id="voteReceiptModal" class="modal-backdrop hidden">
+        <div class="modal-dialog receipt-dialog">
+            <div class="receipt-card">
+                <div class="receipt-header">
+                    <div class="receipt-seal">✓</div>
+                    <h2>Official Digital Ballot Receipt</h2>
+                    <p class="receipt-subtitle">University Electoral Commission • SecureVote</p>
+                </div>
+                <div class="receipt-divider"></div>
+                <div class="receipt-details">
+                    <div class="receipt-row">
+                        <span class="r-label">Receipt Proof Token:</span>
+                        <span class="r-val highlight" id="rcptToken">--</span>
+                    </div>
+                    <div class="receipt-row">
+                        <span class="r-label">Ballot GUID:</span>
+                        <span class="r-val" id="rcptVoteId">--</span>
+                    </div>
+                    <div class="receipt-row">
+                        <span class="r-label">Election:</span>
+                        <span class="r-val" id="rcptElection">--</span>
+                    </div>
+                    <div class="receipt-row">
+                        <span class="r-label">Candidate Voted:</span>
+                        <span class="r-val bold" id="rcptCandidate">--</span>
+                    </div>
+                    <div class="receipt-row">
+                        <span class="r-label">Timestamp:</span>
+                        <span class="r-val" id="rcptTimestamp">--</span>
+                    </div>
+                    <div class="receipt-row">
+                        <span class="r-label">Integrity Status:</span>
+                        <span class="r-val text-success">SHA-256 Salted &amp; Recorded</span>
+                    </div>
+                </div>
+                <div class="receipt-footer">
+                    <button class="btn btn-secondary" onclick="printReceipt()">🖨️ Print</button>
+                    <button class="btn btn-secondary" onclick="copyReceiptToken()">📋 Copy Token</button>
+                    <button class="btn btn-primary" onclick="closeModal('voteReceiptModal'); switchVoterTab('voter-receipts');">
+                        View My Receipts ➔
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Election Modal (Admin) -->
+    <div id="createElectionModal" class="modal-backdrop hidden">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3>Create New University Election</h3>
+                <button class="modal-close" onclick="closeModal('createElectionModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createElectionForm" onsubmit="handleCreateElectionSubmit(event)">
+                    <div class="form-group">
+                        <label>Election Identifier (e.g. ELEC-2026-PRES):</label>
+                        <input type="text" id="newElecId" required class="text-input" placeholder="ELEC-2026-PRES">
+                    </div>
+                    <div class="form-group">
+                        <label>Election Title:</label>
+                        <input type="text" id="newElecTitle" required class="text-input" placeholder="e.g. University Student Council Presidential Election 2026">
+                    </div>
+                    <div class="form-group">
+                        <label>Category:</label>
+                        <select id="newElecCat" class="select-input" required>
+                            <option value="Student Council">Student Council</option>
+                            <option value="Departmental">Departmental</option>
+                            <option value="Club & Society">Club & Society</option>
+                            <option value="Sports Board">Sports Board</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Description:</label>
+                        <textarea id="newElecDesc" class="text-input" rows="2" placeholder="Brief election description and representation scope..."></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('createElectionModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Draft Election</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Candidate Modal (Admin) -->
+    <div id="addCandidateModal" class="modal-backdrop hidden">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3>Add Candidate to Slate</h3>
+                <button class="modal-close" onclick="closeModal('addCandidateModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addCandidateForm" onsubmit="handleAddCandidateSubmit(event)">
+                    <div class="form-group">
+                        <label>Election Scope:</label>
+                        <select id="newCandElectionId" class="select-input" required>
+                            <!-- Populated with elections -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Candidate ID (e.g. CAND-01):</label>
+                        <input type="text" id="newCandId" required class="text-input" placeholder="CAND-01">
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name:</label>
+                        <input type="text" id="newCandName" required class="text-input" placeholder="e.g. Aarav Sharma">
+                    </div>
+                    <div class="form-group">
+                        <label>Party / Slate Name:</label>
+                        <input type="text" id="newCandParty" required class="text-input" placeholder="e.g. Tech Innovators Slate">
+                    </div>
+                    <div class="form-group">
+                        <label>Department:</label>
+                        <select id="newCandDept" class="select-input" required>
+                            <option value="Computer Science">Computer Science</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Mechanical">Mechanical</option>
+                            <option value="Management">Management</option>
+                            <option value="Biotechnology">Biotechnology</option>
+                            <option value="Civil">Civil</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Manifesto / Vision Statement:</label>
+                        <textarea id="newCandManifesto" required minlength="10" class="text-input" rows="3" placeholder="Campaign commitments and policy goals..."></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('addCandidateModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Candidate</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="/static/js/main.js?v=5.0"></script>
+</body>
+</html>

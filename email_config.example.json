@@ -1,0 +1,9 @@
+{
+  "smtp_server": "smtp.gmail.com",
+  "smtp_port": 587,
+  "use_tls": true,
+  "sender_name": "National Electoral Commission Security Gateway",
+  "sender_email": "admin@yourdomain.com",
+  "sender_password": "YOUR_16_CHAR_GOOGLE_APP_PASSWORD",
+  "description": "Rename this file to email_config.json and add your credentials for live Gmail delivery."
+}

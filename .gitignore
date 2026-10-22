@@ -1,0 +1,59 @@
+# ==========================================
+# SecureVote - Git Ignore Configuration
+# ==========================================
+
+# Sensitive Credentials & Secrets (CRITICAL)
+# Protects your Google App Password and custom SMTP secrets from public exposure
+email_config.json
+.env
+*.env
+secrets.json
+
+# Security & Audit Logs (Contains dispatched OTP passcodes and session records)
+*.log
+dispatched_emails.log
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE & Editor Configurations
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
