@@ -1,13 +1,14 @@
 # LOVELY PROFESSIONAL UNIVERSITY
 ## School of Computer Science & Engineering
-### Academic Task 2: Project Report
+### Academic Task 2: Technical Project Report
 **Course Code:** CSE494  
 **Course Title:** INTELLIGENT NOSQL DATABASES  
-**Maximum Marks:** 30  
-
----
-
-# PROJECT TITLE: SecureVote – Intelligent Online Voting System using PyMongo & MongoDB
+**Project Title:** SecureVote – Intelligent Online Voting System using PyMongo & MongoDB  
+**Submitted by:** Yeswanth Burle  
+**Roll No:** 46  
+**Registration No:** 12308271  
+**Submission Date:** 24 – 10 – 2026  
+**GitHub Repository:** [https://github.com/Yeswanth-Burle/SecureVote](https://github.com/Yeswanth-Burle/SecureVote)
 
 ---
 
