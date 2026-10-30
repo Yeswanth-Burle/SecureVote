@@ -2,7 +2,7 @@
  * main.js - SecureVote Client Application Logic
  * Course: CSE494 - Intelligent NoSQL Databases
  * Implements: Login-First Gateway, Voter Self-Registration & Approval Queue,
- * Admin OTP Verification (yeswanthburle1432@gmail.com), and Election Lifecycles.
+ * Admin Password Authentication (yeswanthburle1432@gmail.com), and Election Lifecycles.
  */
 
 // =============================================================================
@@ -295,181 +295,61 @@ async function handleVoterLogin(e) {
     }
 }
 
-// Admin OTP Generation via Mailer
-async function handleRequestAdminOtp(e) {
+// Admin Password Authentication (Permanent Password: Yash@1432)
+async function handleAdminLogin(e) {
     if (e && e.preventDefault) e.preventDefault();
-    const email = document.getElementById("adminEmailInput").value.trim().toLowerCase();
-    const btn = document.getElementById("btnRequestOtp");
+    const emailInput = document.getElementById("adminEmailInput");
+    const passInput = document.getElementById("adminPasswordInput");
+    const email = (emailInput ? emailInput.value : "").trim().toLowerCase();
+    const password = (passInput ? passInput.value : "").trim();
+    const btn = document.getElementById("btnAdminLogin");
+
+    if (!password) {
+        showToast("Please enter the administrator password.", "error");
+        if (passInput) passInput.focus();
+        return;
+    }
+
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = `<span>⏳ Dispatching Passcode via Mailer...</span>`;
+        btn.innerHTML = `<span>⏳ Authenticating Administrator...</span>`;
     }
 
     try {
-        const res = await fetch("/api/auth/admin-request-otp", {
+        const res = await fetch("/api/auth/admin-login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: email })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            document.getElementById("adminStepEmail").classList.add("hidden");
-            document.getElementById("adminStepOtp").classList.remove("hidden");
-
-            // Professional, secure confirmation banner - NO OTP DISPLAY, NO AUTO-FILL
-            const noticeBox = document.getElementById("adminOtpNoticeBox");
-            if (noticeBox) {
-                noticeBox.className = "alert-box alert-success email-dispatched-card";
-                noticeBox.innerHTML = `
-                    <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
-                        <span style="font-size: 1.8rem; line-height: 1;">📬</span>
-                        <div style="flex: 1;">
-                            <div style="font-weight: 700; color: #10b981; font-size: 0.95rem; margin-bottom: 0.25rem;">
-                                Security Passcode Dispatched to Email
-                            </div>
-                            <div style="font-size: 0.84rem; color: #cbd5e1; line-height: 1.45;">
-                                A single-use 6-digit verification code has been dispatched to 
-                                the registered admin email.
-                                Please check your email inbox (and Spam/Junk folder) and enter the code below to authorize entry.
-                            </div>
-                            <div style="font-size: 0.76rem; color: #94a3b8; margin-top: 0.35rem; display: flex; align-items: center; gap: 0.5rem;">
-                                <span>⏱️ Valid for 30 minutes</span>
-                                <span>•</span>
-                                <span>🛡️ High-Security Protocol</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            // Ensure OTP input is clean and ready for manual entry
-            const otpInput = document.getElementById("adminOtpInput");
-            if (otpInput) {
-                otpInput.value = "";
-                otpInput.focus();
-            }
-
-            showToast(`Security code dispatched to ${data.email || email}. Check your email inbox.`, "success");
-            startResendCountdown(30);
-        } else {
-            showToast(data.error || "Failed to dispatch verification code.", "error");
-        }
-    } catch (err) {
-        showToast("Network error: " + err.message, "error");
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = `<span>📩 Request 6-Digit Verification OTP</span> ➔`;
-        }
-    }
-}
-
-let resendTimer = null;
-function startResendCountdown(seconds) {
-    const btn = document.getElementById("btnResendOtp");
-    if (!btn) return;
-    if (resendTimer) clearInterval(resendTimer);
-
-    let remaining = seconds;
-    btn.style.pointerEvents = "none";
-    btn.style.opacity = "0.6";
-    btn.textContent = `🔄 Resend Code (${remaining}s)`;
-
-    resendTimer = setInterval(() => {
-        remaining -= 1;
-        if (remaining <= 0) {
-            clearInterval(resendTimer);
-            btn.style.pointerEvents = "auto";
-            btn.style.opacity = "1";
-            btn.textContent = "🔄 Resend Code";
-        } else {
-            btn.textContent = `🔄 Resend Code (${remaining}s)`;
-        }
-    }, 1000);
-}
-
-async function resendAdminOtp() {
-    const btn = document.getElementById("btnResendOtp");
-    if (btn) {
-        btn.textContent = "⏳ Sending...";
-        btn.style.pointerEvents = "none";
-    }
-    const email = document.getElementById("adminEmailInput").value.trim().toLowerCase();
-    try {
-        const res = await fetch("/api/auth/admin-request-otp", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: email })
-        });
-        const data = await res.json();
-        if (data.success) {
-            showToast(`New verification code dispatched to ${data.email || email}.`, "success");
-            startResendCountdown(30);
-        } else {
-            showToast(data.error || "Failed to resend OTP.", "error");
-            if (btn) {
-                btn.style.pointerEvents = "auto";
-                btn.textContent = "🔄 Resend Code";
-            }
-        }
-    } catch (err) {
-        showToast("Error resending code: " + err.message, "error");
-        if (btn) {
-            btn.style.pointerEvents = "auto";
-            btn.textContent = "🔄 Resend Code";
-        }
-    }
-}
-
-// Admin OTP Verification
-async function handleVerifyAdminOtp(e) {
-    e.preventDefault();
-    const email = document.getElementById("adminEmailInput").value.trim().toLowerCase();
-    const otpInput = document.getElementById("adminOtpInput");
-    const otp = (otpInput ? otpInput.value : "").trim();
-    const btn = document.getElementById("btnVerifyOtp");
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = `<span>⏳ Authenticating Passcode...</span>`;
-    }
-
-    try {
-        const res = await fetch("/api/auth/admin-verify-otp", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: email, otp: otp })
+            body: JSON.stringify({ email: email, password: password })
         });
         const data = await res.json();
 
         if (data.success) {
             currentUser = { role: "admin", is_admin: true, voter: null, admin_email: data.admin_email };
             applyStateToUI();
-            showToast("Admin verified! Commission management console unlocked.", "success");
+            showToast("Welcome Administrator! Commission portal unlocked.", "success");
+            if (passInput) passInput.value = "";
         } else {
-            if (otpInput) {
-                otpInput.classList.add("input-error");
-                setTimeout(() => otpInput.classList.remove("input-error"), 800);
+            if (passInput) {
+                passInput.classList.add("input-error");
+                setTimeout(() => passInput.classList.remove("input-error"), 800);
             }
-            showToast(data.error || "Invalid OTP code. Please check your email.", "error");
+            showToast(data.error || "Authentication failed. Invalid password.", "error");
         }
     } catch (err) {
-        showToast("Verification error: " + err.message, "error");
+        showToast("Login error: " + err.message, "error");
     } finally {
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = `<span>🔐 Verify OTP & Unlock Commission Console</span>`;
+            btn.innerHTML = `<span>🔐 Sign In &amp; Unlock Commission Console</span> ➔`;
         }
     }
 }
 
-function resetAdminOtpStep() {
-    if (resendTimer) clearInterval(resendTimer);
-    document.getElementById("adminStepEmail").classList.remove("hidden");
-    document.getElementById("adminStepOtp").classList.add("hidden");
-    const otpInput = document.getElementById("adminOtpInput");
-    if (otpInput) otpInput.value = "";
-}
+// Backward compatibility stubs
+async function handleRequestAdminOtp(e) { return handleAdminLogin(e); }
+async function handleVerifyAdminOtp(e) { return handleAdminLogin(e); }
+async function resendAdminOtp() {}
+function resetAdminOtpStep() {}
 
 // =============================================================================
 // VOTER PORTAL: BALLOT PAPER & VOTING WORKFLOW

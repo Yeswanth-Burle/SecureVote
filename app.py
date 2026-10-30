@@ -20,7 +20,7 @@ app.secret_key = "securevote_cse494_secret_session_key_2026_nosql"
 # DESIGNATED ELECTORAL COMMISSION ADMINISTRATOR
 # ==============================================================================
 ADMIN_EMAIL = "yeswanthburle1432@gmail.com"
-ADMIN_OTP_STORE = {}  # In-memory store: { email: { "otp": code, "expires_at": timestamp } }
+ADMIN_PASSWORD = "Yash@1432"
 
 # ==============================================================================
 # AUTHENTICATION & ROLE-BASED ACCESS CONTROL ROUTES
@@ -46,19 +46,17 @@ def get_current_user():
         "admin_email": session.get("admin_email") if is_admin else None
     })
 
-# --- ADMIN OTP AUTHENTICATION ---
+# --- ADMIN PASSWORD AUTHENTICATION ---
 
-LATEST_ADMIN_OTP = "143200"
-
-@app.route("/api/auth/admin-request-otp", methods=["POST"])
-def admin_request_otp():
+@app.route("/api/auth/admin-login", methods=["POST"])
+def admin_login():
     """
-    Generates and dispatches a secure 6-digit OTP to the designated administrator email:
-    yeswanthburle1432@gmail.com using the mailer service.
+    Authenticates the designated Electoral Commission Administrator using
+    their permanent password (Yash@1432).
     """
-    global LATEST_ADMIN_OTP
     data = request.json or {}
     email = (data.get("email") or "").strip().lower()
+    password = (data.get("password") or "").strip()
 
     if not email or "yeswanth" in email:
         email = ADMIN_EMAIL.lower()
@@ -69,76 +67,65 @@ def admin_request_otp():
             "error": f"Access Restricted: Only the registered Electoral Administrator ({ADMIN_EMAIL}) is authorized to access the Commission Portal."
         }), 403
 
-    import random
-    import time
-    otp = str(random.randint(100000, 999999))
-    LATEST_ADMIN_OTP = otp
-    ADMIN_OTP_STORE[email] = {
-        "otp": otp,
-        "expires_at": time.time() + 1800  # 30 minute validity
-    }
+    if password != ADMIN_PASSWORD:
+        return jsonify({
+            "success": False,
+            "error": "Invalid administrator password. Access denied."
+        }), 401
 
-    # Dispatch via professional mailer technology
-    mail_result = mailer.send_admin_otp(ADMIN_EMAIL, otp, expires_minutes=30)
-
-    crud.log_audit_action("ADMIN_OTP_REQUESTED", {
-        "email": email,
-        "mailer_mode": mail_result.get("mode"),
-        "delivered": mail_result.get("delivered"),
-        "timestamp": datetime.now().isoformat()
-    })
-
-    return jsonify({
-        "success": True,
-        "message": f"Verification code dispatched to {ADMIN_EMAIL}.",
-        "email": ADMIN_EMAIL,
-        "delivered": mail_result.get("delivered", False),
-        "mode": mail_result.get("mode")
-    })
-
-@app.route("/api/auth/admin-verify-otp", methods=["POST"])
-def admin_verify_otp():
-    """
-    Verifies the OTP sent to yeswanthburle1432@gmail.com and unlocks the admin console.
-    """
-    global LATEST_ADMIN_OTP
-    data = request.json or {}
-    email = (data.get("email") or "").strip().lower()
-    otp_entered = (data.get("otp") or "").strip().replace(" ", "").replace("-", "")
-
-    if not email or "yeswanth" in email:
-        email = ADMIN_EMAIL.lower()
-
-    if email != ADMIN_EMAIL.lower():
-        return jsonify({"success": False, "error": "Unauthorized administrator identity."}), 403
-
-    # Check validity against:
-    # 1. Stored OTP for email
-    # 2. Global LATEST_ADMIN_OTP
-    # 3. Master bypass pins: "143200", "123456", "999999"
-    otp_entry = ADMIN_OTP_STORE.get(email)
-    valid_otps = {"143200", "123456", "999999"}
-    if otp_entry:
-        valid_otps.add(otp_entry.get("otp"))
-    if LATEST_ADMIN_OTP:
-        valid_otps.add(LATEST_ADMIN_OTP)
-
-    if otp_entered not in valid_otps:
-        return jsonify({"success": False, "error": f"Invalid OTP code '{otp_entered}'. Please enter the 6-digit code."}), 400
-
-    # OTP Verified! Unlock Admin Session
+    # Password Verified! Unlock Admin Session
     session["role"] = "admin"
     session["is_admin"] = True
     session["admin_email"] = ADMIN_EMAIL
     session["voter_id"] = None
     session.modified = True
-    ADMIN_OTP_STORE.pop(email, None)
 
-    crud.log_audit_action("ADMIN_OTP_AUTHENTICATED", {"email": ADMIN_EMAIL, "status": "authorized"})
+    crud.log_audit_action("ADMIN_AUTHENTICATED", {
+        "email": ADMIN_EMAIL,
+        "method": "permanent_password",
+        "status": "authorized",
+        "timestamp": datetime.now().isoformat()
+    })
+
     return jsonify({
         "success": True,
-        "message": "Administrator verified successfully. Commission portal unlocked.",
+        "message": "Administrator authenticated successfully. Commission portal unlocked.",
         "admin_email": ADMIN_EMAIL
+    })
+
+@app.route("/api/auth/admin-verify-otp", methods=["POST"])
+def admin_verify_otp():
+    """
+    Backward-compatibility route that accepts permanent password as well.
+    """
+    data = request.json or {}
+    password = (data.get("password") or data.get("otp") or "").strip()
+    if password == ADMIN_PASSWORD:
+        session["role"] = "admin"
+        session["is_admin"] = True
+        session["admin_email"] = ADMIN_EMAIL
+        session["voter_id"] = None
+        session.modified = True
+        crud.log_audit_action("ADMIN_AUTHENTICATED", {
+            "email": ADMIN_EMAIL,
+            "method": "permanent_password_compat",
+            "status": "authorized",
+            "timestamp": datetime.now().isoformat()
+        })
+        return jsonify({
+            "success": True,
+            "message": "Administrator authenticated successfully. Commission portal unlocked.",
+            "admin_email": ADMIN_EMAIL
+        })
+    return admin_login()
+
+@app.route("/api/auth/admin-request-otp", methods=["POST"])
+def admin_request_otp():
+    """Deprecated endpoint notice."""
+    return jsonify({
+        "success": True,
+        "message": "OTP verification has been replaced with permanent password authentication.",
+        "email": ADMIN_EMAIL
     })
 
 # --- VOTER SIGNUP & LOGIN ---

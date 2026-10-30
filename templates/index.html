@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="SecureVote - Official Online Voting System powered by PyMongo & MongoDB. Role-based voter registration, admin OTP verification, and strict electoral lifecycle controls.">
+    <meta name="description" content="SecureVote - Official Online Voting System powered by PyMongo & MongoDB. Role-based voter registration, admin password authentication, and strict electoral lifecycle controls.">
     <title>SecureVote | Official Online Voting Portal</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -257,53 +257,35 @@
                     </div>
                 </div>
 
-                <!-- PANEL B: ADMIN AUTHENTICATION (Restricted to yeswanthburle1432@gmail.com with OTP) -->
+                <!-- PANEL B: ADMIN AUTHENTICATION (Commission Portal Login with Permanent Password) -->
                 <div class="auth-card glass-card hidden" id="authPanelAdmin">
                     <div class="admin-auth-badge">
                         <span class="badge-icon">🔐</span>
                         <span>Commission Portal: <strong>Admin Access Gateway</strong></span>
                     </div>
 
-                    <!-- Step 1: Email Input & Request OTP -->
-                    <div id="adminStepEmail">
+                    <div id="adminLoginFormContainer">
                         <p class="auth-card-desc">
-                            Only the authorized election commission email is permitted. A single-use 6-digit OTP will be generated for authentication.
+                            Authorized election commission access. Enter your administrator email and permanent password to unlock the management console.
                         </p>
-                        <form onsubmit="handleRequestAdminOtp(event)">
+                        <form onsubmit="handleAdminLogin(event)">
                             <div class="form-group">
                                 <label for="adminEmailInput">Administrator Email:</label>
-                                <input type="email" id="adminEmailInput" required class="text-input" value="yeswanthburle1432@gmail.com">
+                                <input type="email" id="adminEmailInput" required class="text-input" value="yeswanthburle1432@gmail.com" autocomplete="email">
                             </div>
-                            <button type="submit" class="btn btn-gold btn-large full-width" id="btnRequestOtp">
-                                <span>📩 Request 6-Digit Verification OTP</span> ➔
-                            </button>
-                        </form>
-                    </div>
 
-                    <!-- Step 2: OTP Verification Input -->
-                    <div id="adminStepOtp" class="hidden">
-                        <div class="alert-box alert-success" id="adminOtpNoticeBox" style="margin-bottom: 1.25rem;">
-                            <!-- Populated with security notice after dispatch -->
-                        </div>
-
-                        <form onsubmit="handleVerifyAdminOtp(event)">
                             <div class="form-group">
-                                <label for="adminOtpInput" style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span>Enter 6-Digit OTP from Email:</span>
-                                    <span style="font-size: 0.78rem; color: #94a3b8;">Manual entry</span>
-                                </label>
-                                <input type="text" id="adminOtpInput" required maxlength="6" class="text-input otp-input-code" placeholder="• • • • • •" autocomplete="off" spellcheck="false">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                                    <label for="adminPasswordInput" style="margin-bottom: 0;">Commission Admin Password:</label>
+                                    <span style="font-size: 0.78rem; color: #f59e0b; font-weight: 600;">Permanent Passkey</span>
+                                </div>
+                                <input type="password" id="adminPasswordInput" required class="text-input" placeholder="Enter administrator password" autocomplete="current-password">
                             </div>
 
-                            <button type="submit" class="btn btn-gold btn-large full-width" id="btnVerifyOtp">
-                                <span>🔐 Verify OTP &amp; Unlock Commission Console</span>
+                            <button type="submit" class="btn btn-gold btn-large full-width" id="btnAdminLogin" style="margin-top: 0.5rem;">
+                                <span>🔐 Sign In &amp; Unlock Commission Console</span> ➔
                             </button>
                         </form>
-
-                        <div class="auth-footer-help" style="margin-top: 1.25rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
-                            <a href="javascript:void(0)" onclick="resendAdminOtp()" id="btnResendOtp">🔄 Resend Code</a>
-                            <a href="javascript:void(0)" onclick="resetAdminOtpStep()">← Change Email</a>
-                        </div>
                     </div>
                 </div>
             </div>

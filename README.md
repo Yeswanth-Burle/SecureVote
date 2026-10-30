@@ -122,9 +122,8 @@ Edit `email_config.json`:
 
 ## 🛡️ Default Commission Credentials (Demo)
 
-- **Admin Account**: Registered Commission Administrator
-- **Authentication**: Single-use 6-digit OTP sent to registered admin email
-- **Emergency Master PIN**: `143200` *(for evaluator grading & offline testing)*
+- **Admin Account**: Registered Commission Administrator (`yeswanthburle1432@gmail.com`)
+- **Authentication**: Permanent Password: `Yash@1432`
 - **Sample Voter**: Email: `rahul.verma@univ.edu` | Password: `password123`
 
 ---
